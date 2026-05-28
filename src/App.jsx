@@ -148,7 +148,10 @@ const totalInvested = allSummaries.reduce((sum, s) => {
   if (s.market === "US") return sum + s.totalInvested * exchangeRate
   return sum + s.totalInvested
 }, 0)
-  const totalRealized = allSummaries.reduce((sum, s) => sum + s.realizedProfit, 0)
+  const totalRealized = allSummaries.reduce((sum, s) => {
+  if (s.market === "US") return sum + s.realizedProfit * exchangeRate
+  return sum + s.realizedProfit
+}, 0)
   const totalUnrealized = allSummaries.reduce((sum, s) => {
     if (!s.currentPrice || s.holdingQty === 0) return sum
     const unrealized = (s.currentPrice - s.avgPrice) * s.holdingQty
@@ -385,7 +388,7 @@ async function handlePDFImport(e) {
                         type="text"
                         inputMode="decimal"
                         placeholder={isStockUS ? "$ 입력" : "원 입력"}
-                        value={currentPrices[s.name] ? Number(currentPrices[s.name]).toLocaleString() : ""}
+                        value={currentPrices[s.name] ?? ""}
                         onChange={e => {
                           const raw = e.target.value.replace(/,/g, "")
                           if (/^\d*\.?\d*$/.test(raw)) setCurrentPrices({ ...currentPrices, [s.name]: raw ? Number(raw) : "" })
@@ -575,7 +578,7 @@ async function handlePDFImport(e) {
                 </div>
               )}
               <div style={{ fontSize: "12px", color: COLORS.textSub, marginBottom: "6px" }}>날짜</div>
-              <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} style={inputStyle("")} />
+              <<input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} style={{ ...inputStyle(""), fontSize: "13px", padding: "10px 14px" }} />
               <div style={{ fontSize: "12px", color: COLORS.textSub, marginBottom: "6px" }}>메모 (선택)</div>
               <input placeholder="거래 이유, 메모 등" value={form.memo} onChange={e => setForm({ ...form, memo: e.target.value })} style={inputStyle("")} />
               <button onClick={handleSubmit} style={{ width: "100%", padding: "14px", borderRadius: "12px", border: "none", background: COLORS.blue, color: "white", fontSize: "15px", fontWeight: "700", cursor: "pointer", marginTop: "4px" }}>거래 추가</button>
