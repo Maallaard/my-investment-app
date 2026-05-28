@@ -279,38 +279,27 @@ async function handlePDFImport(e) {
               </div>
             </div>
 
-            <div style={{ background: "white", borderRadius: "14px", padding: "14px 16px", marginBottom: exchangeRateError ? "6px" : "12px" }}>
-  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-    <span style={{ fontSize: "13px", color: COLORS.textSub, flexShrink: 0 }}>환율 (원/달러)</span>
-    <input
-      type="text"
-      inputMode="decimal"
-      value={exchangeRate.toLocaleString()}
-      onChange={e => {
-        const raw = e.target.value.replace(/,/g, "")
-        if (/^\d*$/.test(raw)) setExchangeRate(raw ? Number(raw) : 0)
-      }}
-      style={{ flex: 1, padding: "8px 12px", borderRadius: "8px", border: `1px solid ${COLORS.border}`, fontSize: "13px", outline: "none", textAlign: "right" }}
-    />
-    <span style={{ fontSize: "13px", color: COLORS.textSub, flexShrink: 0 }}>원</span>
+            <div style={{ background: "white", borderRadius: "14px", padding: "14px 16px", marginBottom: exchangeRateError ? "6px" : "12px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+  <div style={{ fontSize: "13px", color: COLORS.textSub }}>
+    환율
+    {exchangeRateError && <span style={{ marginLeft: "6px" }}>⚠️</span>}
+  </div>
+  <div style={{ textAlign: "right" }}>
+    <div style={{ fontSize: "15px", fontWeight: "700", color: COLORS.text }}>
+      {exchangeRate.toLocaleString()}원/달러
+    </div>
     {!exchangeRateError && exchangeRateUpdatedAt && (
-      <span style={{ fontSize: "10px", color: COLORS.green, flexShrink: 0 }}>실시간</span>
-    )}
-    {exchangeRateError && (
-      <span style={{ fontSize: "16px", flexShrink: 0 }}>⚠️</span>
+      <div style={{ fontSize: "10px", color: COLORS.green, marginTop: "2px" }}>
+        실시간 · {exchangeRateUpdatedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })} 기준
+      </div>
     )}
   </div>
-  {exchangeRateError && (
-    <div style={{ marginTop: "8px", padding: "8px 10px", background: "#FFF3E9", borderRadius: "8px", fontSize: "11px", color: COLORS.orange, lineHeight: "1.6" }}>
-      인터넷 또는 API 연결 오류로 실시간 환율 적용이 불가능하여 최근 환율을 적용했어요!
-    </div>
-  )}
-  {!exchangeRateError && exchangeRateUpdatedAt && (
-    <div style={{ marginTop: "4px", fontSize: "10px", color: COLORS.textSub, textAlign: "right" }}>
-      {exchangeRateUpdatedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })} 기준
-    </div>
-  )}
 </div>
+{exchangeRateError && (
+  <div style={{ marginBottom: "12px", padding: "8px 10px", background: "#FFF3E9", borderRadius: "8px", fontSize: "11px", color: COLORS.orange, lineHeight: "1.6" }}>
+    인터넷 또는 API 연결 오류로 실시간 환율 적용이 불가능하여 최근 환율을 적용했어요!
+  </div>
+)}
 
             <div style={{ fontSize: "15px", fontWeight: "700", color: COLORS.text, margin: "20px 0 10px" }}>종목별 현황</div>
             {stockList.length === 0 && (
