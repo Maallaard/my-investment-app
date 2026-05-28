@@ -144,7 +144,10 @@ useEffect(() => {
   const newAvgPrice = form.type === "buy" && form.price && form.quantity && selectedSummary ? (selectedSummary.holdingQty * selectedSummary.avgPrice + Number(form.quantity) * Number(form.price)) / (selectedSummary.holdingQty + Number(form.quantity)) : null
 
   const allSummaries = stockList.map(s => ({ ...s, ...calcStockSummary(trades, s.name), currentPrice: currentPrices[s.name] || 0 }))
-  const totalInvested = allSummaries.reduce((sum, s) => sum + s.totalInvested, 0)
+const totalInvested = allSummaries.reduce((sum, s) => {
+  if (s.market === "US") return sum + s.totalInvested * exchangeRate
+  return sum + s.totalInvested
+}, 0)
   const totalRealized = allSummaries.reduce((sum, s) => sum + s.realizedProfit, 0)
   const totalUnrealized = allSummaries.reduce((sum, s) => {
     if (!s.currentPrice || s.holdingQty === 0) return sum
@@ -415,7 +418,7 @@ async function handlePDFImport(e) {
                         type="text"
                         inputMode="decimal"
                         placeholder={isStockUS ? "$ 입력" : "원 입력"}
-                        value={targetPrices[s.name] ? Number(targetPrices[s.name]).toLocaleString() : ""}
+                        value={targetPrices[s.name] ? targetPrices[s.name] : ""}
                         onChange={e => {
                           const raw = e.target.value.replace(/,/g, "")
                           if (/^\d*\.?\d*$/.test(raw)) setTargetPrices({ ...targetPrices, [s.name]: raw ? Number(raw) : "" })
