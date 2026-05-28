@@ -718,7 +718,7 @@ async function handlePDFImport(e) {
 
       <div style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: "480px", background: "white", borderTop: `1px solid ${COLORS.border}`, display: "flex", zIndex: 10 }}>
         {tabs.map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)} style={{ flex: 1, padding: "12px 0 14px", border: "none", background: "transparent", color: tab === t.key ? COLORS.blue : COLORS.textSub, fontSize: "11px", fontWeight: tab === t.key ? "700" : "400", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "3px" }}>
+          <button key={t.key} onClick={() => setTab(t.key)} style={{ flex: 1, padding: "16px 0 20px", border: "none", background: "transparent", color: tab === t.key ? COLORS.blue : COLORS.textSub, fontSize: "12px", fontWeight: tab === t.key ? "700" : "400", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
             <span style={{ fontSize: "20px" }}>
               {t.key === "dashboard" ? "🏠" : t.key === "trade" ? "📝" : t.key === "chart" ? "📊" : t.key === "stocks" ? "📋" : "📜"}
             </span>
