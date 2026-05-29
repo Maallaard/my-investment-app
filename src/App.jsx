@@ -337,7 +337,7 @@ function App() {
             </div>
 
             <div style={{ background: "white", borderRadius: "14px", padding: "14px 16px", marginBottom: exchangeRateError ? "6px" : "12px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ fontSize: "13px", color: COLORS.textSub }}>환율{exchangeRateError && <span style={{ marginLeft: "6px" }}>⚠️</span>}</div>
+              <div style={{ fontSize: "13px", color: COLORS.textSub }}>환율
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontSize: "15px", fontWeight: "700", color: COLORS.text }}>{exchangeRate.toLocaleString()}원/달러</div>
                 {!exchangeRateError && exchangeRateUpdatedAt && (
@@ -345,11 +345,6 @@ function App() {
                 )}
               </div>
             </div>
-{exchangeRateError && !exchangeRateUpdatedAt && (
-              <div style={{ marginBottom: "12px", padding: "8px 10px", background: "#FFF3E9", borderRadius: "8px", fontSize: "11px", color: COLORS.orange, lineHeight: "1.6" }}>
-                인터넷 또는 API 연결 오류로 실시간 환율 적용이 불가능하여 최근 환율을 적용했어요!
-              </div>
-            )}
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "20px 0 10px" }}>
               <div style={{ fontSize: "15px", fontWeight: "700", color: COLORS.text }}>종목별 현황</div>
