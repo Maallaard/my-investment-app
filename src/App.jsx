@@ -132,67 +132,50 @@ function App() {
     setSlideDir(newIdx > oldIdx ? 1 : -1)
     setTab(newTab)
   }
-function loadDemoData() {
-  if (!window.confirm("현재 데이터가 모두 지워지고 데모 데이터로 교체돼요. 계속할까요?")) return
 
-  const demoStocks = [
-    { name: "삼성전자", market: "KR" },
-    { name: "카카오", market: "KR" },
-    { name: "TIGER 미국S&P500", market: "KR" },
-    { name: "애플", market: "US" },
-    { name: "테슬라", market: "US" },
-    { name: "엔비디아", market: "US" },
-  ]
-
-  const demoTrades = [
-    // 삼성전자 - 물타기 후 일부 매도, 수익 중
-    { id: 1, name: "삼성전자", type: "buy", quantity: 10, price: 72000, date: "2025-03-10", memo: "분할매수 1차" },
-    { id: 2, name: "삼성전자", type: "buy", quantity: 10, price: 68000, date: "2025-04-15", memo: "물타기" },
-    { id: 3, name: "삼성전자", type: "buy", quantity: 5, price: 65000, date: "2025-06-20", memo: "물타기 2차" },
-    { id: 4, name: "삼성전자", type: "sell", quantity: 10, price: 75000, date: "2025-09-05", memo: "목표가 도달" },
-
-    // 카카오 - 손실 중
-    { id: 5, name: "카카오", type: "buy", quantity: 20, price: 58000, date: "2025-02-10", memo: "" },
-    { id: 6, name: "카카오", type: "buy", quantity: 20, price: 52000, date: "2025-05-20", memo: "물타기" },
-
-    // TIGER S&P500 - 원금 회수 완료
-    { id: 7, name: "TIGER 미국S&P500", type: "buy", quantity: 50, price: 18000, date: "2024-11-01", memo: "" },
-    { id: 8, name: "TIGER 미국S&P500", type: "buy", quantity: 50, price: 17500, date: "2024-12-15", memo: "월급날 적립" },
-    { id: 9, name: "TIGER 미국S&P500", type: "sell", quantity: 60, price: 26000, date: "2025-08-10", memo: "수익 실현" },
-    { id: 10, name: "TIGER 미국S&P500", type: "buy", quantity: 30, price: 24000, date: "2025-10-01", memo: "재매수" },
-
-    // 애플 - 미국주식 수익 중
-    { id: 11, name: "애플", type: "buy", quantity: 2, price: 185.5, date: "2025-01-15", memo: "" },
-    { id: 12, name: "애플", type: "buy", quantity: 1, price: 172.3, date: "2025-03-20", memo: "물타기" },
-    { id: 13, name: "애플", type: "buy", quantity: 1, price: 195.0, date: "2025-11-10", memo: "추가매수" },
-
-    // 테슬라 - 미국주식 손실 중
-    { id: 14, name: "테슬라", type: "buy", quantity: 3, price: 380.0, date: "2025-02-01", memo: "" },
-    { id: 15, name: "테슬라", type: "buy", quantity: 2, price: 320.0, date: "2025-04-10", memo: "물타기" },
-    { id: 16, name: "테슬라", type: "sell", quantity: 2, price: 290.0, date: "2025-07-15", memo: "손절" },
-    { id: 17, name: "테슬라", type: "buy", quantity: 3, price: 250.0, date: "2025-12-01", memo: "물타기 3차" },
-
-    // 엔비디아 - 미국주식 대박
-    { id: 18, name: "엔비디아", type: "buy", quantity: 2, price: 450.0, date: "2024-10-15", memo: "AI 수혜주" },
-    { id: 19, name: "엔비디아", type: "buy", quantity: 1, price: 520.0, date: "2025-01-20", memo: "추가매수" },
-    { id: 20, name: "엔비디아", type: "sell", quantity: 2, price: 890.0, date: "2025-06-30", memo: "목표가 도달, 일부 실현" },
-    { id: 21, name: "엔비디아", type: "buy", quantity: 1, price: 780.0, date: "2025-09-15", memo: "재매수" },
-  ]
-
-  const demoPrices = {
-    "삼성전자": 71000,
-    "카카오": 44000,
-    "TIGER 미국S&P500": 25500,
-    "애플": 220.5,
-    "테슬라": 280.0,
-    "엔비디아": 950.0,
+  function loadDemoData() {
+    if (!window.confirm("현재 데이터가 모두 지워지고 데모 데이터로 교체돼요. 계속할까요?")) return
+    const demoStocks = [
+      { name: "삼성전자", market: "KR" },
+      { name: "카카오", market: "KR" },
+      { name: "TIGER 미국S&P500", market: "KR" },
+      { name: "애플", market: "US" },
+      { name: "테슬라", market: "US" },
+      { name: "엔비디아", market: "US" },
+    ]
+    const demoTrades = [
+      { id: 1, name: "삼성전자", type: "buy", quantity: 10, price: 72000, date: "2025-03-10", memo: "분할매수 1차" },
+      { id: 2, name: "삼성전자", type: "buy", quantity: 10, price: 68000, date: "2025-04-15", memo: "물타기" },
+      { id: 3, name: "삼성전자", type: "buy", quantity: 5, price: 65000, date: "2025-06-20", memo: "물타기 2차" },
+      { id: 4, name: "삼성전자", type: "sell", quantity: 10, price: 75000, date: "2025-09-05", memo: "목표가 도달" },
+      { id: 5, name: "카카오", type: "buy", quantity: 20, price: 58000, date: "2025-02-10", memo: "" },
+      { id: 6, name: "카카오", type: "buy", quantity: 20, price: 52000, date: "2025-05-20", memo: "물타기" },
+      { id: 7, name: "TIGER 미국S&P500", type: "buy", quantity: 50, price: 18000, date: "2024-11-01", memo: "" },
+      { id: 8, name: "TIGER 미국S&P500", type: "buy", quantity: 50, price: 17500, date: "2024-12-15", memo: "월급날 적립" },
+      { id: 9, name: "TIGER 미국S&P500", type: "sell", quantity: 60, price: 26000, date: "2025-08-10", memo: "수익 실현" },
+      { id: 10, name: "TIGER 미국S&P500", type: "buy", quantity: 30, price: 24000, date: "2025-10-01", memo: "재매수" },
+      { id: 11, name: "애플", type: "buy", quantity: 2, price: 185.5, date: "2025-01-15", memo: "" },
+      { id: 12, name: "애플", type: "buy", quantity: 1, price: 172.3, date: "2025-03-20", memo: "물타기" },
+      { id: 13, name: "애플", type: "buy", quantity: 1, price: 195.0, date: "2025-11-10", memo: "추가매수" },
+      { id: 14, name: "테슬라", type: "buy", quantity: 3, price: 380.0, date: "2025-02-01", memo: "" },
+      { id: 15, name: "테슬라", type: "buy", quantity: 2, price: 320.0, date: "2025-04-10", memo: "물타기" },
+      { id: 16, name: "테슬라", type: "sell", quantity: 2, price: 290.0, date: "2025-07-15", memo: "손절" },
+      { id: 17, name: "테슬라", type: "buy", quantity: 3, price: 250.0, date: "2025-12-01", memo: "물타기 3차" },
+      { id: 18, name: "엔비디아", type: "buy", quantity: 2, price: 450.0, date: "2024-10-15", memo: "AI 수혜주" },
+      { id: 19, name: "엔비디아", type: "buy", quantity: 1, price: 520.0, date: "2025-01-20", memo: "추가매수" },
+      { id: 20, name: "엔비디아", type: "sell", quantity: 2, price: 890.0, date: "2025-06-30", memo: "목표가 도달, 일부 실현" },
+      { id: 21, name: "엔비디아", type: "buy", quantity: 1, price: 780.0, date: "2025-09-15", memo: "재매수" },
+    ]
+    const demoPrices = {
+      "삼성전자": 71000, "카카오": 44000, "TIGER 미국S&P500": 25500,
+      "애플": 220.5, "테슬라": 280.0, "엔비디아": 950.0,
+    }
+    setStockList(demoStocks)
+    setTrades(demoTrades)
+    setCurrentPrices(demoPrices)
+    showToast("✅ 데모 데이터가 로드됐어요!")
   }
 
-  setStockList(demoStocks)
-  setTrades(demoTrades)
-  setCurrentPrices(demoPrices)
-  showToast("✅ 데모 데이터가 로드됐어요!")
-}
   function addStock() {
     if (!newStockName) return
     if (stockList.find(s => s.name === newStockName)) { alert("이미 있는 종목이에요!"); return }
@@ -381,10 +364,10 @@ function loadDemoData() {
 
       <div style={{ background: "white", padding: "20px 20px 16px", borderBottom: `1px solid ${COLORS.border}`, position: "sticky", top: 0, zIndex: 10 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-  <div style={{ width: "60px" }} />
-  <h1 style={{ fontSize: "18px", fontWeight: "700", color: COLORS.text, margin: 0 }}>내 투자 기록</h1>
-  <button onClick={loadDemoData} style={{ fontSize: "11px", padding: "4px 10px", borderRadius: "8px", border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.textSub, cursor: "pointer", width: "60px" }}>데모</button>
-</div>
+          <div style={{ width: "60px" }} />
+          <h1 style={{ fontSize: "18px", fontWeight: "700", color: COLORS.text, margin: 0 }}>내 투자 기록</h1>
+          <button onClick={loadDemoData} style={{ fontSize: "11px", padding: "4px 10px", borderRadius: "8px", border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.textSub, cursor: "pointer", width: "60px" }}>데모</button>
+        </div>
       </div>
 
       <div style={{ padding: "16px", animation: slideDir !== 0 ? `slide${slideDir > 0 ? "Left" : "Right"} 0.25s ease` : "none" }}
@@ -740,7 +723,9 @@ function loadDemoData() {
                 </div>
               )}
 
-              <div style={{ fontSize: "12px", color: COLORS.textSub, marginBottom: "6px" }}>날짜</div><input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} style={{ ...inputStyle(""), fontSize: "14px", padding: "10px 14px", appearance: "none", WebkitAppearance: "none" }} />
+              <div style={{ fontSize: "12px", color: COLORS.textSub, marginBottom: "6px" }}>날짜</div>
+              <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} style={{ ...inputStyle(""), appearance: "none", WebkitAppearance: "none" }} />
+              <div style={{ fontSize: "12px", color: COLORS.textSub, marginBottom: "6px" }}>메모 (선택)</div>
               <input placeholder="거래 이유, 메모 등" value={form.memo} onChange={e => setForm({ ...form, memo: e.target.value })} style={inputStyle("")} />
               <div style={{ display: "flex", gap: "8px" }}>
                 <button onClick={handleSubmit} style={{ flex: 1, padding: "14px", borderRadius: "12px", border: "none", background: COLORS.loss, color: "white", fontSize: "15px", fontWeight: "700", cursor: "pointer", marginTop: "4px" }}>
