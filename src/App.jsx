@@ -345,7 +345,7 @@ function App() {
                 )}
               </div>
             </div>
-            {exchangeRateError && (
+{exchangeRateError && !exchangeRateUpdatedAt && (
               <div style={{ marginBottom: "12px", padding: "8px 10px", background: "#FFF3E9", borderRadius: "8px", fontSize: "11px", color: COLORS.orange, lineHeight: "1.6" }}>
                 인터넷 또는 API 연결 오류로 실시간 환율 적용이 불가능하여 최근 환율을 적용했어요!
               </div>
