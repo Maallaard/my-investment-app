@@ -294,13 +294,15 @@ function App() {
         <h1 style={{ fontSize: "18px", fontWeight: "700", color: COLORS.text, margin: 0, textAlign: "center" }}>내 투자 기록</h1>
       </div>
 
-      <div style={{ padding: "16px", animation: slideDir !== 0 ? `slide${slideDir > 0 ? "Left" : "Right"} 0.25s ease` : "none" }}
-        onAnimationEnd={() => setSlideDir(0)}>
+      <div style={{ padding: "16px", animation: slideDir !== 0 ? `slide${slideDir > 0 ? "Left" : "Right"} 0.28s cubic-bezier(0.4,0,0.2,1)` : "none", willChange: "transform" }}
+  onAnimationEnd={() => setSlideDir(0)}>
 
         <style>{`
-          @keyframes slideLeft { from { transform: translateX(30px); opacity: 0.5; } to { transform: translateX(0); opacity: 1; } }
-          @keyframes slideRight { from { transform: translateX(-30px); opacity: 0.5; } to { transform: translateX(0); opacity: 1; } }
-        `}</style>
+         <style>{`
+  @keyframes slideLeft { from { transform: translateX(100%); } to { transform: translateX(0); } }
+  @keyframes slideRight { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+  .slide-container { transition: transform 0.28s cubic-bezier(0.4,0,0.2,1); }
+`}</style>
 
         {tab === "dashboard" && (
           <div>
@@ -770,7 +772,8 @@ function App() {
                   <div style={{ fontSize: "13px", color: COLORS.textSub }}>
                     {trade.date} · {trade.quantity}주 · {trade.price.toLocaleString()}{market === "US" ? "$" : "원"}
                   </div>
-                  {trade.memo && <div style={{ fontSize: "12px", color: COLORS.textSub, marginTop: "4px", padding: "6px 10px", background: COLORS.lightGray, borderRadius: "6px" }}>{trade.memo}</div>}
+                  {trade.memo && <
+                    div style={{ fontSize: "12px", color: COLORS.textSub, marginTop: "4px", padding: "6px 10px", background: COLORS.lightGray, borderRadius: "6px" }}>{trade.memo}</div>}
                 </div>
               )
             })}
