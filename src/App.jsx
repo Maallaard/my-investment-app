@@ -83,6 +83,9 @@ function App() {
   const [toast, setToast] = useState(null)
   const [editingTrade, setEditingTrade] = useState(null)
   const [slideDir, setSlideDir] = useState(0)
+  const [historyView, setHistoryView] = useState("month")
+  const [historyYear, setHistoryYear] = useState(String(new Date().getFullYear()))
+  const [historyMonth, setHistoryMonth] = useState(String(new Date().getMonth() + 1).padStart(2, "0"))
   const [form, setForm] = useState({ name: "", type: "buy", quantity: "", price: "", date: new Date().toISOString().split("T")[0], memo: "" })
   const touchStartX = useRef(null)
   const tabKeys = ["dashboard", "trade", "chart", "stocks", "history"]
@@ -252,6 +255,19 @@ function App() {
   threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
   const threeMonthsAgoStr = threeMonthsAgo.toISOString().split("T")[0]
 
+  const historyYears = [...new Set(trades.map(t => t.date.slice(0, 4)))].sort((a, b) => b.localeCompare(a))
+  const historyMonths = [...new Set(trades.filter(t => t.date.slice(0, 4) === historyYear).map(t => t.date.slice(5, 7)))].sort((a, b) => b.localeCompare(a))
+  const filteredHistory = [...trades].filter(t => {
+    if (historyView === "year") return t.date.slice(0, 4) === historyYear
+    if (historyView === "month") return t.date.slice(0, 4) === historyYear && t.date.slice(5, 7) === historyMonth
+    return true
+  }).sort((a, b) => b.date.localeCompare(a.date))
+  const groupedHistory = {}
+  filteredHistory.forEach(t => {
+    if (!groupedHistory[t.date]) groupedHistory[t.date] = []
+    groupedHistory[t.date].push(t)
+  })
+
   const inputStyle = (field) => ({
     width: "100%", padding: "10px 14px", borderRadius: "10px", fontSize: "14px", outline: "none",
     border: errors[field] ? `1.5px solid ${COLORS.profit}` : `1px solid ${COLORS.border}`,
@@ -341,23 +357,26 @@ function App() {
               </div>
             </div>
 
-            <div style={{ background: "white", borderRadius: "14px", padding: "14px 16px", marginBottom: "12px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ background: "white", borderRadius: "14px", padding: "14px 16px", marginBottom: exchangeRateError ? "6px" : "12px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={{ fontSize: "13px", color: COLORS.textSub }}>환율</div>
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontSize: "15px", fontWeight: "700", color: COLORS.text }}>{exchangeRate.toLocaleString()}원/달러</div>
-               {exchangeRateUpdatedAt && !exchangeRateError && (
-  <div style={{ fontSize: "10px", color: "#00B493", marginTop: "2px" }}>
-    {new Date().toLocaleDateString("ko-KR", { month: "numeric", day: "numeric" })} 09:00 기준
-  </div>
-)}
-                {exchangeRateError && (
-                  <div style={{ fontSize: "10px", color: COLORS.orange, marginTop: "2px" }}>⚠ 인터넷 연결을 확인해주세요</div>
+                {exchangeRateUpdatedAt && !exchangeRateError && (
+                  <div style={{ fontSize: "10px", color: "#00B493", marginTop: "2px" }}>
+                    {exchangeRateUpdatedAt.toLocaleDateString("ko-KR", { month: "numeric", day: "numeric" })} 09:00 기준
+                  </div>
                 )}
                 {!exchangeRateUpdatedAt && !exchangeRateError && (
                   <div style={{ fontSize: "10px", color: COLORS.textSub, marginTop: "2px" }}>불러오는 중...</div>
                 )}
               </div>
             </div>
+            {exchangeRateError && (
+              <div style={{ marginBottom: "12px", padding: "8px 12px", background: "#FFF3E9", borderRadius: "8px", fontSize: "11px", color: COLORS.orange, lineHeight: "1.6" }}>
+                ⚠ 인터넷 또는 API 연결 오류로 실시간 환율 적용이 불가능하여 최근 환율({exchangeRate.toLocaleString()}원)을 적용했어요!
+                {exchangeRateUpdatedAt && <span style={{ display: "block", fontSize: "10px", marginTop: "2px" }}>{exchangeRateUpdatedAt.toLocaleDateString("ko-KR", { month: "numeric", day: "numeric" })} 09:00 기준</span>}
+              </div>
+            )}
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "20px 0 10px" }}>
               <div style={{ fontSize: "15px", fontWeight: "700", color: COLORS.text }}>종목별 현황</div>
@@ -760,19 +779,23 @@ function App() {
             {filteredStockList.length === 0 && <div style={{ background: "white", borderRadius: "14px", padding: "32px 20px", textAlign: "center", color: COLORS.textSub, fontSize: "14px" }}>아직 등록된 종목이 없어요</div>}
             {filteredStockList.map(s => {
               const sum = calcStockSummary(trades, s.name)
+              const isStockUS = s.market === "US"
               return (
                 <div key={s.name} style={{ background: "white", borderRadius: "14px", padding: "16px", marginBottom: "10px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                       <span style={{ fontWeight: "700", fontSize: "15px", color: COLORS.text }}>{s.name}</span>
-                      <span style={{ fontSize: "11px", padding: "2px 7px", borderRadius: "20px", background: s.market === "KR" ? "#EBF3FE" : "#E6FAF6", color: s.market === "KR" ? "#185FA5" : "#00B493", fontWeight: "600" }}>{s.market === "KR" ? "KR" : "US"}</span>
+                      <span style={{ fontSize: "11px", padding: "2px 7px", borderRadius: "20px", background: isStockUS ? "#E6FAF6" : "#EBF3FE", color: isStockUS ? "#00B493" : "#185FA5", fontWeight: "600" }}>{isStockUS ? "US" : "KR"}</span>
                     </div>
                     <button onClick={() => deleteStock(s.name)} style={{ padding: "4px 10px", borderRadius: "8px", border: `1px solid ${COLORS.border}`, background: "transparent", fontSize: "12px", color: COLORS.textSub, cursor: "pointer" }}>삭제</button>
                   </div>
-                  <div style={{ display: "flex", gap: "10px", fontSize: "13px", color: COLORS.textSub }}>
+                  <div style={{ display: "flex", gap: "10px", fontSize: "13px", color: COLORS.textSub, flexWrap: "wrap" }}>
                     <span>보유 {sum.holdingQty}주</span>
-                    <span>평단 {Math.round(sum.avgPrice).toLocaleString()}{s.market === "US" ? "$" : "원"}</span>
-                    <span style={{ color: sum.realizedProfit >= 0 ? COLORS.profit : COLORS.loss, fontWeight: "600" }}>{sum.realizedProfit >= 0 ? "+" : ""}{Math.round(sum.realizedProfit).toLocaleString()}{s.market === "US" ? "$" : "원"}</span>
+                    <span>평단 {Math.round(sum.avgPrice).toLocaleString()}{isStockUS ? "$" : "원"}{isStockUS ? ` (${Math.round(sum.avgPrice * exchangeRate).toLocaleString()}원)` : ""}</span>
+                    <span style={{ color: sum.realizedProfit >= 0 ? COLORS.profit : COLORS.loss, fontWeight: "600" }}>
+                      {sum.realizedProfit >= 0 ? "+" : ""}{Math.round(sum.realizedProfit).toLocaleString()}{isStockUS ? "$" : "원"}
+                      {isStockUS ? ` (${Math.round(sum.realizedProfit * exchangeRate).toLocaleString()}원)` : ""}
+                    </span>
                   </div>
                 </div>
               )
@@ -780,113 +803,89 @@ function App() {
           </div>
         )}
 
-       {tab === "history" && (
-  <div>
-    <div style={{ background: "white", borderRadius: "14px", padding: "16px", marginBottom: "12px" }}>
-      <div style={{ fontSize: "14px", fontWeight: "700", color: COLORS.text, marginBottom: "8px" }}>토스증권 PDF 가져오기</div>
-      <div style={{ fontSize: "12px", color: COLORS.textSub, marginBottom: "12px" }}>토스증권 앱 → 계좌 → 거래내역 → 내보내기 → PDF로 저장 후 업로드해주세요</div>
-      <label style={{ display: "block", width: "100%", padding: "12px", borderRadius: "10px", border: `1.5px dashed ${COLORS.border}`, textAlign: "center", cursor: "pointer", fontSize: "13px", color: COLORS.textSub, boxSizing: "border-box" }}>
-        {importing ? "가져오는 중..." : "PDF 파일 선택"}
-        <input type="file" accept=".pdf" onChange={handlePDFImport} style={{ display: "none" }} />
-      </label>
-      {importResult && (
-        <div style={{ marginTop: "10px", padding: "10px 12px", borderRadius: "8px", fontSize: "12px", background: importResult.success ? "#FEF0F1" : "#EBF3FE", color: importResult.success ? COLORS.profit : COLORS.loss }}>
-          {importResult.message}
-        </div>
-      )}
-    </div>
+        {tab === "history" && (
+          <div>
+            <div style={{ background: "white", borderRadius: "14px", padding: "16px", marginBottom: "12px" }}>
+              <div style={{ fontSize: "14px", fontWeight: "700", color: COLORS.text, marginBottom: "8px" }}>토스증권 PDF 가져오기</div>
+              <div style={{ fontSize: "12px", color: COLORS.textSub, marginBottom: "12px" }}>토스증권 앱 → 계좌 → 거래내역 → 내보내기 → PDF로 저장 후 업로드해주세요</div>
+              <label style={{ display: "block", width: "100%", padding: "12px", borderRadius: "10px", border: `1.5px dashed ${COLORS.border}`, textAlign: "center", cursor: "pointer", fontSize: "13px", color: COLORS.textSub, boxSizing: "border-box" }}>
+                {importing ? "가져오는 중..." : "PDF 파일 선택"}
+                <input type="file" accept=".pdf" onChange={handlePDFImport} style={{ display: "none" }} />
+              </label>
+              {importResult && (
+                <div style={{ marginTop: "10px", padding: "10px 12px", borderRadius: "8px", fontSize: "12px", background: importResult.success ? "#FEF0F1" : "#EBF3FE", color: importResult.success ? COLORS.profit : COLORS.loss }}>
+                  {importResult.message}
+                </div>
+              )}
+            </div>
 
-    {(() => {
-      const now = new Date()
-      const years = [...new Set(trades.map(t => t.date.slice(0, 4)))].sort((a, b) => b.localeCompare(a))
-      const [historyYear, setHistoryYear] = React.useState(String(now.getFullYear()))
-      const [historyMonth, setHistoryMonth] = React.useState(String(now.getMonth() + 1).padStart(2, "0"))
-      const [historyView, setHistoryView] = React.useState("month")
-
-      const filtered = [...trades].filter(t => {
-        if (historyView === "year") return t.date.slice(0, 4) === historyYear
-        if (historyView === "month") return t.date.slice(0, 4) === historyYear && t.date.slice(5, 7) === historyMonth
-        return true
-      }).sort((a, b) => b.date.localeCompare(a.date))
-
-      const grouped = {}
-      filtered.forEach(t => {
-        const key = t.date
-        if (!grouped[key]) grouped[key] = []
-        grouped[key].push(t)
-      })
-
-      const months = [...new Set(trades.filter(t => t.date.slice(0, 4) === historyYear).map(t => t.date.slice(5, 7)))].sort((a, b) => b.localeCompare(a))
-
-      return (
-        <div>
-          <div style={{ display: "flex", gap: "6px", marginBottom: "10px" }}>
-            <button onClick={() => setHistoryView("all")} style={{ padding: "7px 14px", borderRadius: "20px", border: "none", background: historyView === "all" ? COLORS.loss : "white", color: historyView === "all" ? "white" : COLORS.textSub, fontSize: "13px", fontWeight: historyView === "all" ? "700" : "400", cursor: "pointer" }}>전체</button>
-            <button onClick={() => setHistoryView("year")} style={{ padding: "7px 14px", borderRadius: "20px", border: "none", background: historyView === "year" ? COLORS.loss : "white", color: historyView === "year" ? "white" : COLORS.textSub, fontSize: "13px", fontWeight: historyView === "year" ? "700" : "400", cursor: "pointer" }}>연도별</button>
-            <button onClick={() => setHistoryView("month")} style={{ padding: "7px 14px", borderRadius: "20px", border: "none", background: historyView === "month" ? COLORS.loss : "white", color: historyView === "month" ? "white" : COLORS.textSub, fontSize: "13px", fontWeight: historyView === "month" ? "700" : "400", cursor: "pointer" }}>월별</button>
-          </div>
-
-          {historyView !== "all" && (
-            <div style={{ display: "flex", gap: "6px", marginBottom: "10px", overflowX: "auto", paddingBottom: "4px" }}>
-              {years.map(y => (
-                <button key={y} onClick={() => { setHistoryYear(y); if (historyView === "month") { const ms = [...new Set(trades.filter(t => t.date.slice(0, 4) === y).map(t => t.date.slice(5, 7)))].sort((a,b) => b.localeCompare(a)); setHistoryMonth(ms[0] || "01") } }} style={{ padding: "5px 12px", borderRadius: "16px", border: `1px solid ${historyYear === y ? COLORS.loss : COLORS.border}`, background: historyYear === y ? "#EBF3FE" : "white", color: historyYear === y ? COLORS.loss : COLORS.textSub, fontSize: "12px", fontWeight: historyYear === y ? "700" : "400", cursor: "pointer", whiteSpace: "nowrap" }}>{y}년</button>
+            <div style={{ display: "flex", gap: "6px", marginBottom: "10px" }}>
+              {["전체", "연도별", "월별"].map(v => (
+                <button key={v} onClick={() => setHistoryView(v === "전체" ? "all" : v === "연도별" ? "year" : "month")}
+                  style={{ padding: "7px 14px", borderRadius: "20px", border: "none", background: historyView === (v === "전체" ? "all" : v === "연도별" ? "year" : "month") ? COLORS.loss : "white", color: historyView === (v === "전체" ? "all" : v === "연도별" ? "year" : "month") ? "white" : COLORS.textSub, fontSize: "13px", fontWeight: "400", cursor: "pointer" }}>{v}</button>
               ))}
             </div>
-          )}
 
-          {historyView === "month" && (
-            <div style={{ display: "flex", gap: "6px", marginBottom: "12px", overflowX: "auto", paddingBottom: "4px" }}>
-              {months.map(m => (
-                <button key={m} onClick={() => setHistoryMonth(m)} style={{ padding: "5px 12px", borderRadius: "16px", border: `1px solid ${historyMonth === m ? COLORS.loss : COLORS.border}`, background: historyMonth === m ? "#EBF3FE" : "white", color: historyMonth === m ? COLORS.loss : COLORS.textSub, fontSize: "12px", fontWeight: historyMonth === m ? "700" : "400", cursor: "pointer", whiteSpace: "nowrap" }}>{Number(m)}월</button>
-              ))}
-            </div>
-          )}
+            {historyView !== "all" && historyYears.length > 0 && (
+              <div style={{ display: "flex", gap: "6px", marginBottom: "10px", overflowX: "auto", paddingBottom: "4px" }}>
+                {historyYears.map(y => (
+                  <button key={y} onClick={() => { setHistoryYear(y); if (historyView === "month") { const ms = [...new Set(trades.filter(t => t.date.slice(0, 4) === y).map(t => t.date.slice(5, 7)))].sort((a, b) => b.localeCompare(a)); setHistoryMonth(ms[0] || "01") } }}
+                    style={{ padding: "5px 12px", borderRadius: "16px", border: `1px solid ${historyYear === y ? COLORS.loss : COLORS.border}`, background: historyYear === y ? "#EBF3FE" : "white", color: historyYear === y ? COLORS.loss : COLORS.textSub, fontSize: "12px", fontWeight: historyYear === y ? "700" : "400", cursor: "pointer", whiteSpace: "nowrap" }}>{y}년</button>
+                ))}
+              </div>
+            )}
 
-          <div style={{ fontSize: "13px", color: COLORS.textSub, marginBottom: "10px" }}>
-            총 {filtered.length}건
+            {historyView === "month" && historyMonths.length > 0 && (
+              <div style={{ display: "flex", gap: "6px", marginBottom: "12px", overflowX: "auto", paddingBottom: "4px" }}>
+                {historyMonths.map(m => (
+                  <button key={m} onClick={() => setHistoryMonth(m)}
+                    style={{ padding: "5px 12px", borderRadius: "16px", border: `1px solid ${historyMonth === m ? COLORS.loss : COLORS.border}`, background: historyMonth === m ? "#EBF3FE" : "white", color: historyMonth === m ? COLORS.loss : COLORS.textSub, fontSize: "12px", fontWeight: historyMonth === m ? "700" : "400", cursor: "pointer", whiteSpace: "nowrap" }}>{Number(m)}월</button>
+                ))}
+              </div>
+            )}
+
+            <div style={{ fontSize: "13px", color: COLORS.textSub, marginBottom: "10px" }}>총 {filteredHistory.length}건</div>
+
+            {filteredHistory.length === 0 && (
+              <div style={{ background: "white", borderRadius: "14px", padding: "32px 20px", textAlign: "center", color: COLORS.textSub, fontSize: "14px" }}>거래 내역이 없어요</div>
+            )}
+
+            {Object.entries(groupedHistory).sort(([a], [b]) => b.localeCompare(a)).map(([date, dayTrades]) => (
+              <div key={date} style={{ marginBottom: "12px" }}>
+                <div style={{ fontSize: "12px", fontWeight: "700", color: COLORS.textSub, marginBottom: "6px", paddingLeft: "4px" }}>{date}</div>
+                {dayTrades.map(trade => {
+                  const market = stockList.find(s => s.name === trade.name)?.market
+                  return (
+                    <div key={trade.id} style={{ background: "white", borderRadius: "14px", padding: "14px 16px", marginBottom: "6px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                          <span style={{ fontWeight: "700", fontSize: "14px", color: COLORS.text }}>{trade.name}</span>
+                          <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "20px", background: trade.type === "buy" ? "#EBF3FE" : "#FEF0F1", color: trade.type === "buy" ? "#185FA5" : COLORS.profit, fontWeight: "600" }}>
+                            {trade.type === "buy" ? "매수" : "매도"}
+                          </span>
+                        </div>
+                        <div style={{ display: "flex", gap: "6px" }}>
+                          <button onClick={() => {
+                            setEditingTrade(trade)
+                            setForm({ name: trade.name, type: trade.type, quantity: String(trade.quantity), price: String(trade.price), date: trade.date, memo: trade.memo || "" })
+                            setTab("trade")
+                          }} style={{ padding: "3px 8px", borderRadius: "6px", border: `1px solid ${COLORS.border}`, background: "transparent", fontSize: "11px", color: COLORS.textSub, cursor: "pointer" }}>수정</button>
+                          <button onClick={() => { if (window.confirm("이 거래를 삭제할까요?")) setTrades(trades.filter(t => t.id !== trade.id)) }} style={{ padding: "3px 8px", borderRadius: "6px", border: `1px solid ${COLORS.border}`, background: "transparent", fontSize: "11px", color: COLORS.textSub, cursor: "pointer" }}>삭제</button>
+                        </div>
+                      </div>
+                      <div style={{ fontSize: "13px", color: COLORS.textSub }}>
+                        {trade.quantity}주 · {trade.price.toLocaleString()}{market === "US" ? "$" : "원"} · 총 {Math.round(trade.quantity * trade.price).toLocaleString()}{market === "US" ? "$" : "원"}
+                      </div>
+                      {trade.memo && <div style={{ fontSize: "12px", color: COLORS.textSub, marginTop: "4px", padding: "6px 10px", background: COLORS.lightGray, borderRadius: "6px" }}>{trade.memo}</div>}
+                    </div>
+                  )
+                })}
+              </div>
+            ))}
           </div>
+        )}
+      </div>
 
-          {filtered.length === 0 && (
-            <div style={{ background: "white", borderRadius: "14px", padding: "32px 20px", textAlign: "center", color: COLORS.textSub, fontSize: "14px" }}>거래 내역이 없어요</div>
-          )}
-
-          {Object.entries(grouped).sort(([a], [b]) => b.localeCompare(a)).map(([date, dayTrades]) => (
-            <div key={date} style={{ marginBottom: "12px" }}>
-              <div style={{ fontSize: "12px", fontWeight: "700", color: COLORS.textSub, marginBottom: "6px", paddingLeft: "4px" }}>{date}</div>
-              {dayTrades.map(trade => {
-                const market = stockList.find(s => s.name === trade.name)?.market
-                return (
-                  <div key={trade.id} style={{ background: "white", borderRadius: "14px", padding: "14px 16px", marginBottom: "6px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <span style={{ fontWeight: "700", fontSize: "14px", color: COLORS.text }}>{trade.name}</span>
-                        <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "20px", background: trade.type === "buy" ? "#EBF3FE" : "#FEF0F1", color: trade.type === "buy" ? "#185FA5" : COLORS.profit, fontWeight: "600" }}>
-                          {trade.type === "buy" ? "매수" : "매도"}
-                        </span>
-                      </div>
-                      <div style={{ display: "flex", gap: "6px" }}>
-                        <button onClick={() => {
-                          setEditingTrade(trade)
-                          setForm({ name: trade.name, type: trade.type, quantity: String(trade.quantity), price: String(trade.price), date: trade.date, memo: trade.memo || "" })
-                          setTab("trade")
-                        }} style={{ padding: "3px 8px", borderRadius: "6px", border: `1px solid ${COLORS.border}`, background: "transparent", fontSize: "11px", color: COLORS.textSub, cursor: "pointer" }}>수정</button>
-                        <button onClick={() => { if (window.confirm("이 거래를 삭제할까요?")) setTrades(trades.filter(t => t.id !== trade.id)) }} style={{ padding: "3px 8px", borderRadius: "6px", border: `1px solid ${COLORS.border}`, background: "transparent", fontSize: "11px", color: COLORS.textSub, cursor: "pointer" }}>삭제</button>
-                      </div>
-                    </div>
-                    <div style={{ fontSize: "13px", color: COLORS.textSub }}>
-                      {trade.quantity}주 · {trade.price.toLocaleString()}{market === "US" ? "$" : "원"} · 총 {Math.round(trade.quantity * trade.price).toLocaleString()}{market === "US" ? "$" : "원"}
-                    </div>
-                    {trade.memo && <div style={{ fontSize: "12px", color: COLORS.textSub, marginTop: "4px", padding: "6px 10px", background: COLORS.lightGray, borderRadius: "6px" }}>{trade.memo}</div>}
-                  </div>
-                )
-              })}
-            </div>
-          ))}
-        </div>
-      )
-    })()}
-  </div>
-)}
       <div style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: "480px", background: "white", borderTop: `1px solid ${COLORS.border}`, display: "flex", zIndex: 10 }}>
         {tabs.map(t => (
           <button key={t.key} onClick={() => changeTab(t.key)} style={{ flex: 1, padding: "16px 0 20px", border: "none", background: "transparent", color: tab === t.key ? COLORS.loss : COLORS.textSub, fontSize: "12px", fontWeight: tab === t.key ? "700" : "400", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
