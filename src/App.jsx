@@ -676,8 +676,7 @@ function App() {
                 </div>
               )}
 
-              <div style={{ fontSize: "12px", color: COLORS.textSub, marginBottom: "6px" }}>날짜</div>
-              <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} style={inputStyle("")} />
+              <div style={{ fontSize: "12px", color: COLORS.textSub, marginBottom: "6px" }}>날짜</div><input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} style={{ ...inputStyle(""), fontSize: "14px", padding: "10px 14px", appearance: "none", WebkitAppearance: "none" }} /><input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} style={inputStyle("")} />
               <div style={{ fontSize: "12px", color: COLORS.textSub, marginBottom: "6px" }}>메모 (선택)</div>
               <input placeholder="거래 이유, 메모 등" value={form.memo} onChange={e => setForm({ ...form, memo: e.target.value })} style={inputStyle("")} />
               <div style={{ display: "flex", gap: "8px" }}>
