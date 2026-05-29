@@ -99,19 +99,21 @@ function App() {
 
   useEffect(() => {
     function fetchRate() {
-    fetch("https://open.er-api.com/v6/latest/USD")
-  .then(res => res.json())
-  .then(data => {
-    if (data.rates && data.rates.KRW) {
-      setExchangeRate(Math.round(data.rates.KRW))
-      setExchangeRateError(false)
+      fetch("https://open.er-api.com/v6/latest/USD")
+        .then(res => res.json())
+        .then(data => {
+          if (data.rates && data.rates.KRW) {
+            setExchangeRate(Math.round(data.rates.KRW))
+            setExchangeRateError(false)
             setExchangeRateUpdatedAt(new Date())
-          } else setExchangeRateError(true)
+          } else {
+            setExchangeRateError(true)
+          }
         })
         .catch(() => setExchangeRateError(true))
     }
     fetchRate()
-    const interval = setInterval(fetchRate, 5 * 60 * 1000)
+    const interval = setInterval(fetchRate, 60 * 60 * 1000)
     return () => clearInterval(interval)
   }, [])
 
@@ -284,9 +286,13 @@ function App() {
     <div style={{ maxWidth: "480px", margin: "0 auto", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", background: "#F8F9FA", minHeight: "100vh", paddingBottom: "80px", overflow: "hidden" }}
       onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
 
+      <style>{`
+        @keyframes slideLeft { from { transform: translateX(60px); opacity: 0.6; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideRight { from { transform: translateX(-60px); opacity: 0.6; } to { transform: translateX(0); opacity: 1; } }
+      `}</style>
+
       {toast && (
-        <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", background: "rgba(25,31,40,0.92)", color: "white", padding: "18px 40px", borderRadius: "16px", fontSize: "15px", fontWeight: "600", zIndex: 200, textAlign: "center", boxShadow: "0 8px 32px rgba(0,0,0,0.18)", minWidth: "260px", whiteSpace: "nowrap" }}
-        >
+        <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", background: "rgba(25,31,40,0.92)", color: "white", padding: "18px 40px", borderRadius: "16px", fontSize: "15px", fontWeight: "600", zIndex: 200, textAlign: "center", boxShadow: "0 8px 32px rgba(0,0,0,0.18)", minWidth: "260px", whiteSpace: "nowrap" }}>
           {toast}
         </div>
       )}
@@ -295,15 +301,8 @@ function App() {
         <h1 style={{ fontSize: "18px", fontWeight: "700", color: COLORS.text, margin: 0, textAlign: "center" }}>내 투자 기록</h1>
       </div>
 
-      <div style={{ padding: "16px", animation: slideDir !== 0 ? `slide${slideDir > 0 ? "Left" : "Right"} 0.28s cubic-bezier(0.4,0,0.2,1)` : "none", willChange: "transform" }}
-  onAnimationEnd={() => setSlideDir(0)}>
-
-        <style>{`
-         <style>{`
-  @keyframes slideLeft { from { transform: translateX(100%); } to { transform: translateX(0); } }
-  @keyframes slideRight { from { transform: translateX(-100%); } to { transform: translateX(0); } }
-  .slide-container { transition: transform 0.28s cubic-bezier(0.4,0,0.2,1); }
-`}</style>
+      <div style={{ padding: "16px", animation: slideDir !== 0 ? `slide${slideDir > 0 ? "Left" : "Right"} 0.25s ease` : "none" }}
+        onAnimationEnd={() => setSlideDir(0)}>
 
         {tab === "dashboard" && (
           <div>
@@ -336,12 +335,15 @@ function App() {
               </div>
             </div>
 
-            <div style={{ background: "white", borderRadius: "14px", padding: "14px 16px", marginBottom: exchangeRateError ? "6px" : "12px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <div style={{ fontSize: "13px", color: COLORS.textSub }}>환율
+            <div style={{ background: "white", borderRadius: "14px", padding: "14px 16px", marginBottom: "12px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ fontSize: "13px", color: COLORS.textSub }}>환율</div>
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontSize: "15px", fontWeight: "700", color: COLORS.text }}>{exchangeRate.toLocaleString()}원/달러</div>
-                {!exchangeRateError && exchangeRateUpdatedAt && (
+                {exchangeRateUpdatedAt && (
                   <div style={{ fontSize: "10px", color: "#00B493", marginTop: "2px" }}>금일 09:00 기준</div>
+                )}
+                {!exchangeRateUpdatedAt && (
+                  <div style={{ fontSize: "10px", color: COLORS.orange, marginTop: "2px" }}>환율 불러오는 중...</div>
                 )}
               </div>
             </div>
@@ -682,7 +684,7 @@ function App() {
                 <div key={s.name} style={{ marginBottom: "14px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
                     <span style={{ fontSize: "13px", fontWeight: "600", color: COLORS.text }}>{s.name}</span>
-                   <span style={{ fontSize: "13px", fontWeight: "700", color: s.realizedProfit >= 0 ? COLORS.profit : COLORS.loss }}>{s.realizedProfit >= 0 ? "+" : ""}{Math.round(s.realizedProfit).toLocaleString()}{s.market === "US" ? "$" : "원"}</span>
+                    <span style={{ fontSize: "13px", fontWeight: "700", color: s.realizedProfit >= 0 ? COLORS.profit : COLORS.loss }}>{s.realizedProfit >= 0 ? "+" : ""}{Math.round(s.realizedProfit).toLocaleString()}{s.market === "US" ? "$" : "원"}</span>
                   </div>
                   <div style={{ height: "6px", background: COLORS.lightGray, borderRadius: "3px", overflow: "hidden" }}>
                     <div style={{ height: "100%", borderRadius: "3px", background: s.realizedProfit >= 0 ? COLORS.profit : COLORS.loss, width: `${Math.min(100, Math.abs(s.realizedProfit) / Math.max(...allSummaries.map(x => Math.abs(x.realizedProfit)), 1) * 100)}%`, transition: "width 0.4s" }} />
@@ -768,8 +770,7 @@ function App() {
                   <div style={{ fontSize: "13px", color: COLORS.textSub }}>
                     {trade.date} · {trade.quantity}주 · {trade.price.toLocaleString()}{market === "US" ? "$" : "원"}
                   </div>
-                  {trade.memo && <
-                    div style={{ fontSize: "12px", color: COLORS.textSub, marginTop: "4px", padding: "6px 10px", background: COLORS.lightGray, borderRadius: "6px" }}>{trade.memo}</div>}
+                  {trade.memo && <div style={{ fontSize: "12px", color: COLORS.textSub, marginTop: "4px", padding: "6px 10px", background: COLORS.lightGray, borderRadius: "6px" }}>{trade.memo}</div>}
                 </div>
               )
             })}
