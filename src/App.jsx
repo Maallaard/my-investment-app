@@ -77,6 +77,7 @@ function App() {
   const [exchangeRateError, setExchangeRateError] = useState(false)
   const [exchangeRateUpdatedAt, setExchangeRateUpdatedAt] = useState(null)
   const [sortOrder, setSortOrder] = useState("name")
+  const [stockFilter, setStockFilter] = useState("전체")
   const [importing, setImporting] = useState(false)
   const [importResult, setImportResult] = useState(null)
   const [toast, setToast] = useState(null)
@@ -263,6 +264,11 @@ function App() {
   }
 
   const sortedStockList = [...stockList].sort((a, b) => a.name.localeCompare(b.name, "ko"))
+  const filteredStockList = sortedStockList.filter(s => {
+    if (stockFilter === "국내") return s.market === "KR"
+    if (stockFilter === "해외") return s.market === "US"
+    return true
+  })
 
   const tabs = [
     { key: "dashboard", label: "홈" },
@@ -339,11 +345,14 @@ function App() {
               <div style={{ fontSize: "13px", color: COLORS.textSub }}>환율</div>
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontSize: "15px", fontWeight: "700", color: COLORS.text }}>{exchangeRate.toLocaleString()}원/달러</div>
-                {exchangeRateUpdatedAt && (
+                {exchangeRateUpdatedAt && !exchangeRateError && (
                   <div style={{ fontSize: "10px", color: "#00B493", marginTop: "2px" }}>금일 09:00 기준</div>
                 )}
-                {!exchangeRateUpdatedAt && (
-                  <div style={{ fontSize: "10px", color: COLORS.orange, marginTop: "2px" }}>환율 불러오는 중...</div>
+                {exchangeRateError && (
+                  <div style={{ fontSize: "10px", color: COLORS.orange, marginTop: "2px" }}>⚠ 인터넷 연결을 확인해주세요</div>
+                )}
+                {!exchangeRateUpdatedAt && !exchangeRateError && (
+                  <div style={{ fontSize: "10px", color: COLORS.textSub, marginTop: "2px" }}>불러오는 중...</div>
                 )}
               </div>
             </div>
@@ -398,23 +407,30 @@ function App() {
                   </div>
 
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px", marginBottom: "10px" }}>
-                    {[
-                      { label: "투자원금", value: `${Math.round(s.totalInvested).toLocaleString()}${isStockUS ? "$" : "원"}` },
-                      { label: "보유수량", value: `${s.holdingQty}주` },
-                      { label: "평단가", value: `${Math.round(s.avgPrice).toLocaleString()}${isStockUS ? "$" : "원"}` },
-                    ].map(({ label, value }) => (
-                      <div key={label} style={{ background: COLORS.lightGray, borderRadius: "8px", padding: "8px 10px" }}>
-                        <div style={{ fontSize: "10px", color: COLORS.textSub, marginBottom: "3px" }}>{label}</div>
-                        <div style={{ fontSize: "12px", fontWeight: "600", color: COLORS.text }}>{value}</div>
-                      </div>
-                    ))}
+                    <div style={{ background: COLORS.lightGray, borderRadius: "8px", padding: "8px 10px" }}>
+                      <div style={{ fontSize: "10px", color: COLORS.textSub, marginBottom: "3px" }}>투자원금</div>
+                      <div style={{ fontSize: "12px", fontWeight: "600", color: COLORS.text }}>{Math.round(s.totalInvested).toLocaleString()}{isStockUS ? "$" : "원"}</div>
+                      {isStockUS && <div style={{ fontSize: "10px", color: COLORS.textSub, marginTop: "2px" }}>({Math.round(s.totalInvested * exchangeRate).toLocaleString()}원)</div>}
+                    </div>
+                    <div style={{ background: COLORS.lightGray, borderRadius: "8px", padding: "8px 10px" }}>
+                      <div style={{ fontSize: "10px", color: COLORS.textSub, marginBottom: "3px" }}>보유수량</div>
+                      <div style={{ fontSize: "12px", fontWeight: "600", color: COLORS.text }}>{s.holdingQty}주</div>
+                    </div>
+                    <div style={{ background: COLORS.lightGray, borderRadius: "8px", padding: "8px 10px" }}>
+                      <div style={{ fontSize: "10px", color: COLORS.textSub, marginBottom: "3px" }}>평단가</div>
+                      <div style={{ fontSize: "12px", fontWeight: "600", color: COLORS.text }}>{Math.round(s.avgPrice).toLocaleString()}{isStockUS ? "$" : "원"}</div>
+                      {isStockUS && <div style={{ fontSize: "10px", color: COLORS.textSub, marginTop: "2px" }}>({Math.round(s.avgPrice * exchangeRate).toLocaleString()}원)</div>}
+                    </div>
                   </div>
 
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
                     <span style={{ fontSize: "13px", color: COLORS.textSub }}>실현수익</span>
-                    <span style={{ fontSize: "14px", fontWeight: "700", color: s.realizedProfit >= 0 ? COLORS.profit : COLORS.loss }}>
-                      {s.realizedProfit >= 0 ? "+" : ""}{Math.round(s.realizedProfit).toLocaleString()}{isStockUS ? "$" : "원"}
-                    </span>
+                    <div style={{ textAlign: "right" }}>
+                      <span style={{ fontSize: "14px", fontWeight: "700", color: s.realizedProfit >= 0 ? COLORS.profit : COLORS.loss }}>
+                        {s.realizedProfit >= 0 ? "+" : ""}{Math.round(s.realizedProfit).toLocaleString()}{isStockUS ? "$" : "원"}
+                      </span>
+                      {isStockUS && <div style={{ fontSize: "11px", color: COLORS.textSub }}>({Math.round(s.realizedProfit * exchangeRate).toLocaleString()}원)</div>}
+                    </div>
                   </div>
 
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
@@ -456,9 +472,12 @@ function App() {
                         style={{ flex: 1, padding: "8px 12px", borderRadius: "8px", border: `1px solid ${COLORS.border}`, fontSize: "13px", outline: "none" }}
                       />
                       {s.currentPrice > 0 && (
-                        <span style={{ fontSize: "13px", fontWeight: "700", color: unrealized >= 0 ? COLORS.profit : COLORS.loss, flexShrink: 0 }}>
-                          {unrealized >= 0 ? "+" : ""}{Math.round(unrealized).toLocaleString()}원
-                        </span>
+                        <div style={{ textAlign: "right", flexShrink: 0 }}>
+                          <span style={{ fontSize: "13px", fontWeight: "700", color: unrealized >= 0 ? COLORS.profit : COLORS.loss }}>
+                            {unrealized >= 0 ? "+" : ""}{Math.round(unrealized).toLocaleString()}원
+                          </span>
+                          {isStockUS && <div style={{ fontSize: "10px", color: COLORS.textSub }}>(${unrealizedRaw >= 0 ? "+" : ""}{unrealizedRaw.toFixed(2)})</div>}
+                        </div>
                       )}
                     </div>
                   )}
@@ -469,20 +488,20 @@ function App() {
                       <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "12px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
                           <span style={{ fontSize: "12px", color: COLORS.textSub }}>총 투입금액</span>
-                          <span style={{ fontSize: "12px", fontWeight: "600", color: COLORS.loss }}>-{Math.round(totalIn).toLocaleString()}{isStockUS ? "$" : "원"}</span>
+                          <span style={{ fontSize: "12px", fontWeight: "600", color: COLORS.loss }}>-{Math.round(totalIn).toLocaleString()}{isStockUS ? "$" : "원"}{isStockUS ? ` (${Math.round(totalIn * exchangeRate).toLocaleString()}원)` : ""}</span>
                         </div>
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
                           <span style={{ fontSize: "12px", color: COLORS.textSub }}>총 회수금액</span>
-                          <span style={{ fontSize: "12px", fontWeight: "600", color: COLORS.profit }}>+{Math.round(totalOut).toLocaleString()}{isStockUS ? "$" : "원"}</span>
+                          <span style={{ fontSize: "12px", fontWeight: "600", color: COLORS.profit }}>+{Math.round(totalOut).toLocaleString()}{isStockUS ? "$" : "원"}{isStockUS ? ` (${Math.round(totalOut * exchangeRate).toLocaleString()}원)` : ""}</span>
                         </div>
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
                           <span style={{ fontSize: "12px", color: COLORS.textSub }}>현재 묶인 돈</span>
-                          <span style={{ fontSize: "12px", fontWeight: "600", color: COLORS.text }}>{Math.round(s.avgPrice * s.holdingQty).toLocaleString()}{isStockUS ? "$" : "원"}</span>
+                          <span style={{ fontSize: "12px", fontWeight: "600", color: COLORS.text }}>{Math.round(s.avgPrice * s.holdingQty).toLocaleString()}{isStockUS ? "$" : "원"}{isStockUS ? ` (${Math.round(s.avgPrice * s.holdingQty * exchangeRate).toLocaleString()}원)` : ""}</span>
                         </div>
                         {currentValue > 0 && (
                           <div style={{ display: "flex", justifyContent: "space-between" }}>
                             <span style={{ fontSize: "12px", color: COLORS.textSub }}>현재 평가금액</span>
-                            <span style={{ fontSize: "12px", fontWeight: "600", color: COLORS.text }}>{Math.round(currentValue).toLocaleString()}{isStockUS ? "$" : "원"}</span>
+                            <span style={{ fontSize: "12px", fontWeight: "600", color: COLORS.text }}>{Math.round(currentValue).toLocaleString()}{isStockUS ? "$" : "원"}{isStockUS ? ` (${Math.round(currentValue * exchangeRate).toLocaleString()}원)` : ""}</span>
                           </div>
                         )}
                       </div>
@@ -601,14 +620,20 @@ function App() {
                   {previewTotal !== null && (
                     <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
                       <span style={{ fontSize: "13px", color: COLORS.textSub }}>총 {form.type === "buy" ? "매수" : "매도"}금액</span>
-                      <span style={{ fontSize: "13px", fontWeight: "700", color: COLORS.text }}>{Math.round(previewTotal).toLocaleString()}{isUS ? "$" : "원"}</span>
+                      <span style={{ fontSize: "13px", fontWeight: "700", color: COLORS.text }}>
+                        {Math.round(previewTotal).toLocaleString()}{isUS ? "$" : "원"}
+                        {isUS && <span style={{ fontSize: "11px", color: COLORS.textSub, marginLeft: "4px" }}>({Math.round(previewTotal * exchangeRate).toLocaleString()}원)</span>}
+                      </span>
                     </div>
                   )}
                   {form.type === "sell" && previewProfit !== null && selectedSummary && (
                     <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                       <div style={{ display: "flex", justifyContent: "space-between" }}>
                         <span style={{ fontSize: "12px", color: COLORS.textSub }}>예상 실현수익</span>
-                        <span style={{ fontSize: "12px", fontWeight: "700", color: previewProfit >= 0 ? COLORS.profit : COLORS.loss }}>{previewProfit >= 0 ? "+" : ""}{Math.round(previewProfit).toLocaleString()}{isUS ? "$" : "원"}</span>
+                        <span style={{ fontSize: "12px", fontWeight: "700", color: previewProfit >= 0 ? COLORS.profit : COLORS.loss }}>
+                          {previewProfit >= 0 ? "+" : ""}{Math.round(previewProfit).toLocaleString()}{isUS ? "$" : "원"}
+                          {isUS && <span style={{ fontSize: "11px", fontWeight: "400", color: COLORS.textSub, marginLeft: "4px" }}>({Math.round(previewProfit * exchangeRate).toLocaleString()}원)</span>}
+                        </span>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between" }}>
                         <span style={{ fontSize: "12px", color: COLORS.textSub }}>평단 기준</span>
@@ -680,17 +705,31 @@ function App() {
             </div>
             <div style={{ background: "white", borderRadius: "16px", padding: "20px" }}>
               <div style={{ fontSize: "14px", fontWeight: "700", color: COLORS.text, marginBottom: "14px" }}>종목별 실현수익</div>
-              {allSummaries.map(s => (
-                <div key={s.name} style={{ marginBottom: "14px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
-                    <span style={{ fontSize: "13px", fontWeight: "600", color: COLORS.text }}>{s.name}</span>
-                    <span style={{ fontSize: "13px", fontWeight: "700", color: s.realizedProfit >= 0 ? COLORS.profit : COLORS.loss }}>{s.realizedProfit >= 0 ? "+" : ""}{Math.round(s.realizedProfit).toLocaleString()}{s.market === "US" ? "$" : "원"}</span>
+              {allSummaries.map(s => {
+                const isStockUS = s.market === "US"
+                const realizedKRW = isStockUS ? s.realizedProfit * exchangeRate : s.realizedProfit
+                const maxVal = Math.max(...allSummaries.map(x => Math.abs(x.market === "US" ? x.realizedProfit * exchangeRate : x.realizedProfit)), 1)
+                return (
+                  <div key={s.name} style={{ marginBottom: "14px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                      <span style={{ fontSize: "13px", fontWeight: "600", color: COLORS.text }}>{s.name}</span>
+                      <div style={{ textAlign: "right" }}>
+                        <span style={{ fontSize: "13px", fontWeight: "700", color: realizedKRW >= 0 ? COLORS.profit : COLORS.loss }}>
+                          {realizedKRW >= 0 ? "+" : ""}{Math.round(realizedKRW).toLocaleString()}원
+                        </span>
+                        {isStockUS && (
+                          <div style={{ fontSize: "10px", color: COLORS.textSub }}>
+                            ({s.realizedProfit >= 0 ? "+" : ""}{Math.round(s.realizedProfit).toLocaleString()}$)
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ height: "6px", background: COLORS.lightGray, borderRadius: "3px", overflow: "hidden" }}>
+                      <div style={{ height: "100%", borderRadius: "3px", background: realizedKRW >= 0 ? COLORS.profit : COLORS.loss, width: `${Math.min(100, Math.abs(realizedKRW) / maxVal * 100)}%`, transition: "width 0.4s" }} />
+                    </div>
                   </div>
-                  <div style={{ height: "6px", background: COLORS.lightGray, borderRadius: "3px", overflow: "hidden" }}>
-                    <div style={{ height: "100%", borderRadius: "3px", background: s.realizedProfit >= 0 ? COLORS.profit : COLORS.loss, width: `${Math.min(100, Math.abs(s.realizedProfit) / Math.max(...allSummaries.map(x => Math.abs(x.realizedProfit)), 1) * 100)}%`, transition: "width 0.4s" }} />
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}
@@ -706,9 +745,18 @@ function App() {
               </div>
               <button onClick={addStock} style={{ width: "100%", padding: "13px", borderRadius: "12px", border: "none", background: COLORS.loss, color: "white", fontSize: "14px", fontWeight: "700", cursor: "pointer" }}>종목 추가</button>
             </div>
-            <div style={{ fontSize: "15px", fontWeight: "700", color: COLORS.text, margin: "4px 0 10px" }}>등록된 종목</div>
-            {stockList.length === 0 && <div style={{ background: "white", borderRadius: "14px", padding: "32px 20px", textAlign: "center", color: COLORS.textSub, fontSize: "14px" }}>아직 등록된 종목이 없어요</div>}
-            {sortedStockList.map(s => {
+
+            <div style={{ display: "flex", gap: "6px", marginBottom: "12px" }}>
+              {["전체", "국내", "해외"].map(f => (
+                <button key={f} onClick={() => setStockFilter(f)} style={{ padding: "7px 16px", borderRadius: "20px", border: "none", background: stockFilter === f ? COLORS.loss : "white", color: stockFilter === f ? "white" : COLORS.textSub, fontSize: "13px", fontWeight: stockFilter === f ? "700" : "400", cursor: "pointer" }}>{f}</button>
+              ))}
+            </div>
+
+            <div style={{ fontSize: "15px", fontWeight: "700", color: COLORS.text, margin: "4px 0 10px" }}>
+              등록된 종목 {filteredStockList.length > 0 && <span style={{ fontSize: "12px", color: COLORS.textSub, fontWeight: "400" }}>({filteredStockList.length}개)</span>}
+            </div>
+            {filteredStockList.length === 0 && <div style={{ background: "white", borderRadius: "14px", padding: "32px 20px", textAlign: "center", color: COLORS.textSub, fontSize: "14px" }}>아직 등록된 종목이 없어요</div>}
+            {filteredStockList.map(s => {
               const sum = calcStockSummary(trades, s.name)
               return (
                 <div key={s.name} style={{ background: "white", borderRadius: "14px", padding: "16px", marginBottom: "10px" }}>
