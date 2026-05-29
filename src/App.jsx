@@ -340,7 +340,7 @@ function App() {
               <div style={{ textAlign: "right" }}>
                 <div style={{ fontSize: "15px", fontWeight: "700", color: COLORS.text }}>{exchangeRate.toLocaleString()}원/달러</div>
                 {!exchangeRateError && exchangeRateUpdatedAt && (
-                  <div style={{ fontSize: "10px", color: "#00B493", marginTop: "2px" }}>실시간 · {exchangeRateUpdatedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })} 기준</div>
+                  <div style={{ fontSize: "10px", color: "#00B493", marginTop: "2px" }}>금일 09:00 기준</div>
                 )}
               </div>
             </div>
