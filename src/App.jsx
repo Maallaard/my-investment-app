@@ -99,12 +99,12 @@ function App() {
 
   useEffect(() => {
     function fetchRate() {
-      fetch("https://api.frankfurter.app/latest?from=USD&to=KRW")
-        .then(res => res.json())
-        .then(data => {
-          if (data.rates && data.rates.KRW) {
-            setExchangeRate(Math.round(data.rates.KRW))
-            setExchangeRateError(false)
+     fetch("https://api.exchangerate-api.com/v4/latest/USD")
+  .then(res => res.json())
+  .then(data => {
+    if (data.rates && data.rates.KRW) {
+      setExchangeRate(Math.round(data.rates.KRW))
+      setExchangeRateError(false)
             setExchangeRateUpdatedAt(new Date())
           } else setExchangeRateError(true)
         })
