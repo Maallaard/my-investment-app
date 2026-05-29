@@ -285,7 +285,8 @@ function App() {
       onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
 
       {toast && (
-        <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", background: "rgba(25,31,40,0.92)", color: "white", padding: "18px 32px", borderRadius: "16px", fontSize: "15px", fontWeight: "600", zIndex: 200, textAlign: "center", boxShadow: "0 8px 32px rgba(0,0,0,0.18)", minWidth: "200px" }}>
+        <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", background: "rgba(25,31,40,0.92)", color: "white", padding: "18px 40px", borderRadius: "16px", fontSize: "15px", fontWeight: "600", zIndex: 200, textAlign: "center", boxShadow: "0 8px 32px rgba(0,0,0,0.18)", minWidth: "260px", whiteSpace: "nowrap" }}
+        >
           {toast}
         </div>
       )}
@@ -633,7 +634,7 @@ function App() {
               )}
 
               <div style={{ fontSize: "12px", color: COLORS.textSub, marginBottom: "6px" }}>날짜</div>
-              <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} style={{ ...inputStyle(""), padding: "8px 14px", fontSize: "14px" }} />
+              <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} style={inputStyle("")} />
               <div style={{ fontSize: "12px", color: COLORS.textSub, marginBottom: "6px" }}>메모 (선택)</div>
               <input placeholder="거래 이유, 메모 등" value={form.memo} onChange={e => setForm({ ...form, memo: e.target.value })} style={inputStyle("")} />
               <div style={{ display: "flex", gap: "8px" }}>
@@ -686,7 +687,7 @@ function App() {
                 <div key={s.name} style={{ marginBottom: "14px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
                     <span style={{ fontSize: "13px", fontWeight: "600", color: COLORS.text }}>{s.name}</span>
-                    <span style={{ fontSize: "13px", fontWeight: "700", color: s.realizedProfit >= 0 ? COLORS.profit : COLORS.loss }}>{s.realizedProfit >= 0 ? "+" : ""}{Math.round(s.realizedProfit).toLocaleString()}원</span>
+                   <span style={{ fontSize: "13px", fontWeight: "700", color: s.realizedProfit >= 0 ? COLORS.profit : COLORS.loss }}>{s.realizedProfit >= 0 ? "+" : ""}{Math.round(s.realizedProfit).toLocaleString()}{s.market === "US" ? "$" : "원"}</span>
                   </div>
                   <div style={{ height: "6px", background: COLORS.lightGray, borderRadius: "3px", overflow: "hidden" }}>
                     <div style={{ height: "100%", borderRadius: "3px", background: s.realizedProfit >= 0 ? COLORS.profit : COLORS.loss, width: `${Math.min(100, Math.abs(s.realizedProfit) / Math.max(...allSummaries.map(x => Math.abs(x.realizedProfit)), 1) * 100)}%`, transition: "width 0.4s" }} />
