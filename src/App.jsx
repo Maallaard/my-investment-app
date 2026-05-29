@@ -363,7 +363,7 @@ function App() {
                 <div style={{ fontSize: "15px", fontWeight: "700", color: COLORS.text }}>{exchangeRate.toLocaleString()}원/달러</div>
                 {exchangeRateUpdatedAt && !exchangeRateError && (
                   <div style={{ fontSize: "10px", color: "#00B493", marginTop: "2px" }}>
-                    {exchangeRateUpdatedAt.toLocaleDateString("ko-KR", { month: "numeric", day: "numeric" })} 09:00 기준
+                    {exchangeRateUpdatedAt.toLocaleDateString("ko-KR", { year: "numeric", month: "numeric", day: "numeric" })} 09:00 기준
                   </div>
                 )}
                 {!exchangeRateUpdatedAt && !exchangeRateError && (
@@ -374,7 +374,7 @@ function App() {
             {exchangeRateError && (
               <div style={{ marginBottom: "12px", padding: "8px 12px", background: "#FFF3E9", borderRadius: "8px", fontSize: "11px", color: COLORS.orange, lineHeight: "1.6" }}>
                 ⚠ 인터넷 또는 API 연결 오류로 실시간 환율 적용이 불가능하여 최근 환율({exchangeRate.toLocaleString()}원)을 적용했어요!
-                {exchangeRateUpdatedAt && <span style={{ display: "block", fontSize: "10px", marginTop: "2px" }}>{exchangeRateUpdatedAt.toLocaleDateString("ko-KR", { month: "numeric", day: "numeric" })} 09:00 기준</span>}
+                {exchangeRateUpdatedAt && <span style={{ display: "block", fontSize: "10px", marginTop: "2px" }}>{exchangeRateUpdatedAt.toLocaleDateString("ko-KR", { year: "numeric", month: "numeric", day: "numeric" })} 09:00 기준</span>}
               </div>
             )}
 
