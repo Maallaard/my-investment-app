@@ -3,7 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 
 import { parseTossPDF } from "./parsePDF"
 
 const COLORS = {
-  blue: "#3182F6", green: "#E24B4A", red: "#3182F6", orange: "#FF6B00",
+  blue: "#3182F6", green: "#00B493", red: "#F04452", orange: "#FF6B00",
   gray: "#8B95A1", lightGray: "#F2F4F6", border: "#E5E8EB", text: "#191F28", textSub: "#8B95A1",
   profit: "#E24B4A", loss: "#3182F6",
 }
@@ -49,7 +49,7 @@ function getTradeLabel(type, quantity, summary) {
     if (summary.holdingQty === 0) return { text: "신규 매수", color: "#185FA5", bg: "#EBF3FE" }
     return { text: "물타기", color: COLORS.orange, bg: "#FFF3E9" }
   } else {
-    if (qty >= summary.holdingQty) return { text: "전량 매도", color: "#A32D2D", bg: "#FCEBEB" }
+    if (qty >= summary.holdingQty) return { text: "전량 매도", color: COLORS.profit, bg: "#FEF0F1" }
     return { text: "일부 매도", color: "#9B2FF7", bg: "#F5EFFE" }
   }
 }
@@ -67,7 +67,6 @@ function App() {
   const [trades, setTrades] = useState(() => { const s = localStorage.getItem("trades"); return s ? JSON.parse(s) : [] })
   const [stockList, setStockList] = useState(() => { const s = localStorage.getItem("stockList"); return s ? JSON.parse(s) : [] })
   const [currentPrices, setCurrentPrices] = useState(() => { const s = localStorage.getItem("currentPrices"); return s ? JSON.parse(s) : {} })
-  const [targetPrices, setTargetPrices] = useState(() => { const s = localStorage.getItem("targetPrices"); return s ? JSON.parse(s) : {} })
   const [exchangeRate, setExchangeRate] = useState(() => { const s = localStorage.getItem("exchangeRate"); return s ? Number(s) : 1380 })
   const [tab, setTab] = useState("dashboard")
   const [newStockName, setNewStockName] = useState("")
@@ -82,26 +81,25 @@ function App() {
   const [importResult, setImportResult] = useState(null)
   const [toast, setToast] = useState(null)
   const [editingTrade, setEditingTrade] = useState(null)
-const [form, setForm] = useState({ name: "", type: "buy", quantity: "", price: "", date: new Date().toISOString().split("T")[0], memo: "" })
-
-useEffect(() => {
-  if (tab === "trade" && !editingTrade) {
-    setForm(prev => ({ ...prev, date: new Date().toISOString().split("T")[0] }))
-  }
-}, [tab])
+  const [slideDir, setSlideDir] = useState(0)
+  const [form, setForm] = useState({ name: "", type: "buy", quantity: "", price: "", date: new Date().toISOString().split("T")[0], memo: "" })
   const touchStartX = useRef(null)
-
   const tabKeys = ["dashboard", "trade", "chart", "stocks", "history"]
 
   useEffect(() => { localStorage.setItem("trades", JSON.stringify(trades)) }, [trades])
   useEffect(() => { localStorage.setItem("stockList", JSON.stringify(stockList)) }, [stockList])
   useEffect(() => { localStorage.setItem("currentPrices", JSON.stringify(currentPrices)) }, [currentPrices])
-  useEffect(() => { localStorage.setItem("targetPrices", JSON.stringify(targetPrices)) }, [targetPrices])
   useEffect(() => { localStorage.setItem("exchangeRate", String(exchangeRate)) }, [exchangeRate])
 
   useEffect(() => {
+    if (tab === "trade" && !editingTrade) {
+      setForm(prev => ({ ...prev, date: new Date().toISOString().split("T")[0] }))
+    }
+  }, [tab])
+
+  useEffect(() => {
     function fetchRate() {
-      fetch("https://api.exchangerate-api.com/v4/latest/USD")
+      fetch("https://api.frankfurter.app/latest?from=USD&to=KRW")
         .then(res => res.json())
         .then(data => {
           if (data.rates && data.rates.KRW) {
@@ -120,6 +118,13 @@ useEffect(() => {
   function showToast(msg) {
     setToast(msg)
     setTimeout(() => setToast(null), 2500)
+  }
+
+  function changeTab(newTab) {
+    const oldIdx = tabKeys.indexOf(tab)
+    const newIdx = tabKeys.indexOf(newTab)
+    setSlideDir(newIdx > oldIdx ? 1 : -1)
+    setTab(newTab)
   }
 
   function addStock() {
@@ -155,10 +160,10 @@ useEffect(() => {
     if (editingTrade) {
       setTrades(trades.map(t => t.id === editingTrade.id ? { ...t, name: form.name, type: form.type, quantity: Number(form.quantity), price: Number(form.price), date: form.date, memo: form.memo } : t))
       setEditingTrade(null)
-      showToast("거래가 수정됐어요!")
+      showToast("✅ 거래가 수정됐어요!")
     } else {
       setTrades([...trades, { id: Date.now(), name: form.name, type: form.type, quantity: Number(form.quantity), price: Number(form.price), date: form.date, memo: form.memo }])
-      showToast("거래가 추가됐어요!")
+      showToast("✅ 거래가 추가됐어요!")
     }
     setForm({ name: "", type: "buy", quantity: "", price: "", date: new Date().toISOString().split("T")[0], memo: "" })
   }
@@ -200,12 +205,11 @@ useEffect(() => {
     ? (selectedSummary.holdingQty * selectedSummary.avgPrice + Number(form.quantity) * Number(form.price)) / (selectedSummary.holdingQty + Number(form.quantity)) : null
 
   const allSummaries = stockList.map(s => ({ ...s, ...calcStockSummary(trades, s.name), currentPrice: currentPrices[s.name] || 0 }))
-
   const sortedSummaries = [...allSummaries].sort((a, b) => {
-    const aUnrealized = a.currentPrice ? (a.currentPrice - a.avgPrice) * a.holdingQty : 0
-    const bUnrealized = b.currentPrice ? (b.currentPrice - b.avgPrice) * b.holdingQty : 0
-    if (sortOrder === "profit") return (b.realizedProfit + bUnrealized) - (a.realizedProfit + aUnrealized)
-    if (sortOrder === "loss") return (a.realizedProfit + aUnrealized) - (b.realizedProfit + bUnrealized)
+    const aU = a.currentPrice ? (a.currentPrice - a.avgPrice) * a.holdingQty : 0
+    const bU = b.currentPrice ? (b.currentPrice - b.avgPrice) * b.holdingQty : 0
+    if (sortOrder === "profit") return (b.realizedProfit + bU) - (a.realizedProfit + aU)
+    if (sortOrder === "loss") return (a.realizedProfit + aU) - (b.realizedProfit + bU)
     if (sortOrder === "invested") return b.totalInvested - a.totalInvested
     return a.name.localeCompare(b.name, "ko")
   })
@@ -232,8 +236,7 @@ useEffect(() => {
     const key = t.date.slice(0, 7)
     const avg = calcStockSummary(trades.filter(x => x.name === t.name && x.date <= t.date), t.name).avgPrice
     const market = stockList.find(s => s.name === t.name)?.market
-    const profit = (t.price - avg) * t.quantity * (market === "US" ? exchangeRate : 1)
-    monthlyMap[key] = (monthlyMap[key] || 0) + profit
+    monthlyMap[key] = (monthlyMap[key] || 0) + (t.price - avg) * t.quantity * (market === "US" ? exchangeRate : 1)
   })
   const monthlyData = Object.entries(monthlyMap).sort(([a], [b]) => a.localeCompare(b)).map(([month, profit]) => ({ month: month.slice(2), profit }))
   const chartTotalProfit = sellTrades.reduce((sum, t) => {
@@ -242,8 +245,12 @@ useEffect(() => {
     return sum + (t.price - avg) * t.quantity * (market === "US" ? exchangeRate : 1)
   }, 0)
 
+  const threeMonthsAgo = new Date()
+  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
+  const threeMonthsAgoStr = threeMonthsAgo.toISOString().split("T")[0]
+
   const inputStyle = (field) => ({
-    width: "100%", padding: "12px 14px", borderRadius: "10px", fontSize: "15px", outline: "none",
+    width: "100%", padding: "10px 14px", borderRadius: "10px", fontSize: "14px", outline: "none",
     border: errors[field] ? `1.5px solid ${COLORS.profit}` : `1px solid ${COLORS.border}`,
     marginBottom: errors[field] ? "4px" : "10px", background: "white", color: COLORS.text, boxSizing: "border-box"
   })
@@ -268,19 +275,17 @@ useEffect(() => {
     if (touchStartX.current === null) return
     const diff = touchStartX.current - e.changedTouches[0].clientX
     const idx = tabKeys.indexOf(tab)
-    if (diff > 60 && idx < tabKeys.length - 1) setTab(tabKeys[idx + 1])
-    else if (diff < -60 && idx > 0) setTab(tabKeys[idx - 1])
+    if (diff > 50 && idx < tabKeys.length - 1) changeTab(tabKeys[idx + 1])
+    else if (diff < -50 && idx > 0) changeTab(tabKeys[idx - 1])
     touchStartX.current = null
   }
 
   return (
-    <div
-      style={{ maxWidth: "480px", margin: "0 auto", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", background: "#F8F9FA", minHeight: "100vh", paddingBottom: "80px" }}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-    >
+    <div style={{ maxWidth: "480px", margin: "0 auto", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", background: "#F8F9FA", minHeight: "100vh", paddingBottom: "80px", overflow: "hidden" }}
+      onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+
       {toast && (
-        <div style={{ position: "fixed", top: "20px", left: "50%", transform: "translateX(-50%)", background: COLORS.text, color: "white", padding: "10px 20px", borderRadius: "20px", fontSize: "13px", zIndex: 100, whiteSpace: "nowrap" }}>
+        <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", background: "rgba(25,31,40,0.92)", color: "white", padding: "18px 32px", borderRadius: "16px", fontSize: "15px", fontWeight: "600", zIndex: 200, textAlign: "center", boxShadow: "0 8px 32px rgba(0,0,0,0.18)", minWidth: "200px" }}>
           {toast}
         </div>
       )}
@@ -289,7 +294,13 @@ useEffect(() => {
         <h1 style={{ fontSize: "18px", fontWeight: "700", color: COLORS.text, margin: 0, textAlign: "center" }}>내 투자 기록</h1>
       </div>
 
-      <div style={{ padding: "16px" }}>
+      <div style={{ padding: "16px", animation: slideDir !== 0 ? `slide${slideDir > 0 ? "Left" : "Right"} 0.25s ease` : "none" }}
+        onAnimationEnd={() => setSlideDir(0)}>
+
+        <style>{`
+          @keyframes slideLeft { from { transform: translateX(30px); opacity: 0.5; } to { transform: translateX(0); opacity: 1; } }
+          @keyframes slideRight { from { transform: translateX(-30px); opacity: 0.5; } to { transform: translateX(0); opacity: 1; } }
+        `}</style>
 
         {tab === "dashboard" && (
           <div>
@@ -352,6 +363,7 @@ useEffect(() => {
                 종목 탭에서 종목을 먼저 추가해주세요
               </div>
             )}
+
             {sortedSummaries.map(s => {
               const isStockUS = s.market === "US"
               const unrealizedRaw = s.currentPrice ? (s.currentPrice - s.avgPrice) * s.holdingQty : 0
@@ -360,9 +372,8 @@ useEffect(() => {
               const extraProfit = s.realizedProfit - s.totalInvested
               const bep = s.avgPrice
               const bepDiff = s.currentPrice && bep > 0 ? ((s.currentPrice - bep) / bep * 100) : null
-              const targetPrice = targetPrices[s.name]
-              const targetProgress = targetPrice && s.avgPrice > 0 ? Math.min(100, ((s.currentPrice - s.avgPrice) / (targetPrice - s.avgPrice)) * 100) : null
               const buyHistory = calcBuyHistory(trades, s.name)
+              const recentBuyHistory = buyHistory.filter(h => h.date >= threeMonthsAgoStr)
               const totalIn = trades.filter(t => t.name === s.name && t.type === "buy").reduce((sum, t) => sum + t.quantity * t.price, 0)
               const totalOut = trades.filter(t => t.name === s.name && t.type === "sell").reduce((sum, t) => sum + t.quantity * t.price, 0)
               const currentValue = s.currentPrice ? s.currentPrice * s.holdingQty : 0
@@ -435,8 +446,7 @@ useEffect(() => {
                     <div style={{ display: "flex", gap: "8px", alignItems: "center", paddingTop: "10px", borderTop: `1px solid ${COLORS.border}`, marginBottom: "8px" }}>
                       <span style={{ fontSize: "12px", color: COLORS.textSub, flexShrink: 0 }}>현재가</span>
                       <input
-                        type="text"
-                        inputMode="decimal"
+                        type="text" inputMode="decimal"
                         placeholder={isStockUS ? "$ 입력" : "원 입력"}
                         value={currentPrices[s.name] ?? ""}
                         onChange={e => {
@@ -450,35 +460,6 @@ useEffect(() => {
                           {unrealized >= 0 ? "+" : ""}{Math.round(unrealized).toLocaleString()}원
                         </span>
                       )}
-                    </div>
-                  )}
-
-                  {s.holdingQty > 0 && (
-                    <div style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "8px" }}>
-                      <span style={{ fontSize: "12px", color: COLORS.textSub, flexShrink: 0 }}>목표가</span>
-                      <input
-                        type="text"
-                        inputMode="decimal"
-                        placeholder={isStockUS ? "$ 입력" : "원 입력"}
-                        value={targetPrices[s.name] ?? ""}
-                        onChange={e => {
-                          const raw = e.target.value
-                          if (/^\d*\.?\d*$/.test(raw)) setTargetPrices({ ...targetPrices, [s.name]: raw === "" ? "" : raw })
-                        }}
-                        style={{ flex: 1, padding: "8px 12px", borderRadius: "8px", border: `1px solid ${COLORS.border}`, fontSize: "13px", outline: "none" }}
-                      />
-                    </div>
-                  )}
-
-                  {targetProgress !== null && s.currentPrice > 0 && Number(targetPrices[s.name]) > s.avgPrice && (
-                    <div style={{ marginBottom: "8px" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                        <span style={{ fontSize: "11px", color: COLORS.textSub }}>목표가까지</span>
-                        <span style={{ fontSize: "11px", fontWeight: "600", color: COLORS.loss }}>{Math.max(0, targetProgress).toFixed(0)}%</span>
-                      </div>
-                      <div style={{ height: "5px", background: COLORS.lightGray, borderRadius: "3px", overflow: "hidden" }}>
-                        <div style={{ height: "100%", borderRadius: "3px", background: COLORS.loss, width: `${Math.max(0, Math.min(100, targetProgress))}%`, transition: "width 0.3s" }} />
-                      </div>
                     </div>
                   )}
 
@@ -506,15 +487,18 @@ useEffect(() => {
                         )}
                       </div>
 
-                      <div style={{ fontSize: "13px", fontWeight: "700", color: COLORS.text, marginBottom: "10px" }}>물타기 타임라인</div>
-                      <div style={{ maxHeight: buyHistory.length > 5 ? "200px" : "none", overflowY: buyHistory.length > 5 ? "auto" : "visible", paddingRight: buyHistory.length > 5 ? "4px" : "0" }}>
-                        {buyHistory.length === 0
-                          ? <div style={{ fontSize: "12px", color: COLORS.textSub }}>매수 내역이 없어요</div>
-                          : buyHistory.map((h, i) => (
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                        <div style={{ fontSize: "13px", fontWeight: "700", color: COLORS.text }}>물타기 타임라인</div>
+                        <div style={{ fontSize: "11px", color: COLORS.textSub }}>최근 3개월</div>
+                      </div>
+                      <div style={{ maxHeight: recentBuyHistory.length > 5 ? "200px" : "none", overflowY: recentBuyHistory.length > 5 ? "auto" : "visible" }}>
+                        {recentBuyHistory.length === 0
+                          ? <div style={{ fontSize: "12px", color: COLORS.textSub }}>최근 3개월 매수 내역이 없어요</div>
+                          : recentBuyHistory.map((h, i) => (
                             <div key={i} style={{ display: "flex", gap: "10px", marginBottom: "8px", alignItems: "flex-start" }}>
                               <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                                 <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: i === 0 ? COLORS.loss : COLORS.orange, marginTop: "4px" }} />
-                                {i < buyHistory.length - 1 && <div style={{ width: "1px", height: "24px", background: COLORS.border }} />}
+                                {i < recentBuyHistory.length - 1 && <div style={{ width: "1px", height: "24px", background: COLORS.border }} />}
                               </div>
                               <div style={{ flex: 1 }}>
                                 <div style={{ fontSize: "11px", color: COLORS.textSub }}>{h.date}</div>
@@ -523,7 +507,6 @@ useEffect(() => {
                                   {i > 0 && <span style={{ color: COLORS.orange, marginLeft: "4px" }}>물타기</span>}
                                 </div>
                                 <div style={{ fontSize: "11px", color: COLORS.textSub }}>→ 평단 {Math.round(h.avgPrice).toLocaleString()}{isStockUS ? "$" : "원"}</div>
-                                {h.memo && <div style={{ fontSize: "11px", color: COLORS.textSub, fontStyle: "italic" }}>{h.memo}</div>}
                               </div>
                             </div>
                           ))
@@ -541,7 +524,7 @@ useEffect(() => {
                               </span>
                             </div>
                             <div style={{ display: "flex", justifyContent: "space-between" }}>
-                              <span style={{ fontSize: "12px", color: COLORS.textSub }}>원화 환산 (현재 환율)</span>
+                              <span style={{ fontSize: "12px", color: COLORS.textSub }}>원화 환산</span>
                               <span style={{ fontSize: "12px", fontWeight: "600", color: unrealized >= 0 ? COLORS.profit : COLORS.loss }}>
                                 {unrealized >= 0 ? "+" : ""}{Math.round(unrealized).toLocaleString()}원
                               </span>
@@ -648,7 +631,7 @@ useEffect(() => {
               )}
 
               <div style={{ fontSize: "12px", color: COLORS.textSub, marginBottom: "6px" }}>날짜</div>
-              <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} style={inputStyle("")} />
+              <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} style={{ ...inputStyle(""), padding: "8px 14px", fontSize: "14px" }} />
               <div style={{ fontSize: "12px", color: COLORS.textSub, marginBottom: "6px" }}>메모 (선택)</div>
               <input placeholder="거래 이유, 메모 등" value={form.memo} onChange={e => setForm({ ...form, memo: e.target.value })} style={inputStyle("")} />
               <div style={{ display: "flex", gap: "8px" }}>
@@ -757,7 +740,7 @@ useEffect(() => {
                 <input type="file" accept=".pdf" onChange={handlePDFImport} style={{ display: "none" }} />
               </label>
               {importResult && (
-                <div style={{ marginTop: "10px", padding: "10px 12px", borderRadius: "8px", fontSize: "12px", background: importResult.success ? "#FEF0F1" : "#FEF0F1", color: importResult.success ? COLORS.profit : COLORS.loss }}>
+                <div style={{ marginTop: "10px", padding: "10px 12px", borderRadius: "8px", fontSize: "12px", background: importResult.success ? "#FEF0F1" : "#EBF3FE", color: importResult.success ? COLORS.profit : COLORS.loss }}>
                   {importResult.message}
                 </div>
               )}
@@ -797,7 +780,7 @@ useEffect(() => {
 
       <div style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: "480px", background: "white", borderTop: `1px solid ${COLORS.border}`, display: "flex", zIndex: 10 }}>
         {tabs.map(t => (
-          <button key={t.key} onClick={() => setTab(t.key)} style={{ flex: 1, padding: "16px 0 20px", border: "none", background: "transparent", color: tab === t.key ? COLORS.loss : COLORS.textSub, fontSize: "12px", fontWeight: tab === t.key ? "700" : "400", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+          <button key={t.key} onClick={() => changeTab(t.key)} style={{ flex: 1, padding: "16px 0 20px", border: "none", background: "transparent", color: tab === t.key ? COLORS.loss : COLORS.textSub, fontSize: "12px", fontWeight: tab === t.key ? "700" : "400", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
             <span style={{ fontSize: "20px" }}>
               {t.key === "dashboard" ? "🏠" : t.key === "trade" ? "📝" : t.key === "chart" ? "📊" : t.key === "stocks" ? "📋" : "📜"}
             </span>
