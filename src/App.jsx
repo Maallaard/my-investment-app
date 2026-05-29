@@ -99,7 +99,7 @@ function App() {
 
   useEffect(() => {
     function fetchRate() {
-     fetch("https://api.exchangerate-api.com/v4/latest/USD")
+    fetch("https://open.er-api.com/v6/latest/USD")
   .then(res => res.json())
   .then(data => {
     if (data.rates && data.rates.KRW) {
